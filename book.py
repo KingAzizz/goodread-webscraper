@@ -1,8 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import os.path
 
-url = "https://www.goodreads.com/book/show/12232938-the-lovely-bones"
+url = "https://www.goodreads.com/book/show/6555517-the-dead-tossed-waves"
 req = requests.get(url)
 
 soup = BeautifulSoup(req.content, "html.parser")
@@ -24,6 +25,8 @@ genre = soup.find(class_="elementList").contents[1].get_text()
 
 publishedAt = soup.find(class_="uitext darkGreyText").contents[3].get_text()
 
+rating = soup.find("span",{"itemprop":"ratingValue"}).get_text()
+
 ratingCountString = soup.findAll("meta", {"itemprop": "ratingCount"})[0].get_text()
 ratingCount = ratingCountString.replace("ratings", "")
 
@@ -34,6 +37,10 @@ ISBNString = soup.findAll(class_="infoBoxRowItem")[1].contents[0]
 ISBN = ISBNString.replace(" ", "")
 
 ISBN13 = soup.find("span",{"itemprop":"isbn"}).get_text()
+csvfilePath = "./book.csv" 
+
+
+
 
 dict = {'Name': [bookName],
         'Author': [author],
@@ -42,11 +49,22 @@ dict = {'Name': [bookName],
         'Description':[description],
         'Genre':[genre],
         'Published At':[publishedAt],
+        'Rating':[rating],
        'RatingCount':[ratingCount],
        'ReviewCount':[reviewCount],
         'ISBN':[ISBN],
         'ISBN13':[ISBN13]
         }
 df = pd.DataFrame(dict)
-df.to_csv("book.csv", index=False, mode='a')
+
+
+if os.path.isfile(csvfilePath):
+        
+        data = pd.read_csv(csvfilePath)
+        data.head()
+        data = data.append(df, ignore_index=True)
+        data.to_csv(csvfilePath, index=False)
+else:
+        df.to_csv(csvfilePath, index=False, mode='a')
+
 
